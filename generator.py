@@ -1,23 +1,32 @@
 from random import randint
 
+
 class Matrix:
 
-    def __init__(self, num_users, num_items, empty_cell_percentage, record_mode):
-        self.matrix = [[0 for x in range(num_users)] for y in range(num_items)]
-        self.num_users = num_users
-        self.num_items = num_items
+    def __init__(self, empty_cell_percentage, record_mode):
+        self.num_users = 50
+        self.num_items = 20
+        self.matrix = [[0 for x in range(self.num_users)]
+                       for y in range(self.num_items)]
         self.empty_cell_percentage = empty_cell_percentage
         self.record_mode = record_mode
+        self.file = "matrix_files/matrix_{}_percent_empty.txt".format(
+            empty_cell_percentage)
         self.populate()
 
     def populate(self):
+        # reads directly from the file holding a matrix of self.empty_cell_percentage empty cells
         if not self.record_mode:
-            self.read()
+            self.read(self.file)
             return
 
+        # reads from the fully populated matrix and only then empties some of the cells
+        self.read()
         for i in range(self.num_items):
             for j in range(self.num_users):
-                self.matrix[i][j] = self.randomCellValue()
+                cell_is_empty = randint(0, 100) < self.empty_cell_percentage
+                if cell_is_empty:
+                    self.matrix[i][j] = 0
 
         self.persist()
 
@@ -25,7 +34,7 @@ class Matrix:
         for i in range(self.num_items):
             for j in range(self.num_users):
                 print(self.matrix[i][j] if self.matrix[i]
-                      [j] != 0 else "_", end=' ')
+                      [j] != 0.0 else self.matrix[i][j], end='\t')
                 if j == self.num_users - 1:
                     print("\n")
 
@@ -39,21 +48,15 @@ class Matrix:
         return counter * 100 / (self.num_users * self.num_items)
 
     def persist(self):
-        f = open("matrix.txt", "w")
+        f = open(self.file, "w")
         for i in range(self.num_items):
             for j in range(self.num_users):
-                f.write("{} ".format(self.matrix[i][j]))
+                f.write("{}\t".format(self.matrix[i][j]))
                 if j == self.num_users - 1:
                     f.write("\n")
 
-    def read(self):
+    def read(self, file="matrix_files/matrix.txt"):
         self.matrix = []
-        f = open("matrix.txt", "r")
+        f = open(file, "r")
         for line in f:
-            self.matrix.append(list(map(int, line.split())))
-
-    def randomCellValue(self):
-        # generates random values taking into account the percentage of
-        # empty cells we want to achieve
-        cell_is_empty = randint(0, 100) < self.empty_cell_percentage
-        return 0 if cell_is_empty else randint(1, 5)
+            self.matrix.append(list(map(float, line.split())))

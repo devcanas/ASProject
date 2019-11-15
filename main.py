@@ -1,12 +1,12 @@
 import generator
 import algorithm
+import sys
 
-num_users = int(input("Number of users: "))
-num_items = int(input("Number of movies: "))
-empty_cell_percentage = int(input("Percentage of empty cells: "))
-record_mode = True #True write in matrix.txt / False read from matrix.txt
+empty_cell_percentage = int(sys.argv[1])
+# True write in matrix_<empty_cell_percentage>_empty_cells.txt / False read from matrix.txt
+record_mode = bool(sys.argv[2])
 
-matrix = generator.Matrix(num_users, num_items, empty_cell_percentage, record_mode)
+matrix = generator.Matrix(empty_cell_percentage, record_mode)
 matrix.pretty_print()
 
 print("%.2f of the matrix cells are empty!" %
@@ -14,4 +14,4 @@ print("%.2f of the matrix cells are empty!" %
 
 alg = algorithm.Algorithm(matrix.matrix)
 # PC test
-print(alg.PC(0, 4))
+print(alg.pc(0, 4))
