@@ -1,0 +1,10 @@
+This program was done using Java 8 (1.8.0_202).
+Download the movie ratings database from: https://www.kaggle.com/rounakbanik/the-movies-dataset
+Extract the files inside this folder.
+Open this folder in the console.
+Compile the Main.java file: javac Main.java
+Run the java program as follows: java Main > matrix.txt
+
+The resulting file follows the next pattern:
+The first 20 lines are the names of the movies in order.
+The next 50 lines are the ratings given by the users to each movie (20 columns), each separated by on space, the ratings are in intervals of 0.5, the minimum rating is 0.5 and the maximum is 5.0
