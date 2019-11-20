@@ -18,3 +18,4 @@ print("%.2f percent of the matrix cells are empty" %
 alg = Algorithm(matrix)
 # PC test
 print(alg.pc(0, 4))
+print(alg.pclib(0,4))
