@@ -1,7 +1,7 @@
 from random import randint
 
 
-class Matrix:
+class Generator:
 
     def __init__(self, empty_cell_percentage, record_mode):
         self.num_users = 50
@@ -16,7 +16,7 @@ class Matrix:
         self.__populate()
 
     def __populate(self):
-        # reads directly from the file holding a matrix of self.empty_cell_percentage empty cells
+        # reads directly from the file holding a matrix with the desired percentage of empty cells
         if not self.record_mode:
             self.read(self.file)
             return
