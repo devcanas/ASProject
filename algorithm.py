@@ -1,6 +1,6 @@
 from math import pow, sqrt
-from scipy.stats import pearsonr;
-
+from scipy.stats import pearsonr
+from operator import itemgetter
 
 class Algorithm:
 
@@ -22,9 +22,6 @@ class Algorithm:
             if (ru != 0 and rv != 0):
                 ratings_u.append(ru)
                 ratings_v.append(rv)
-
-        print(ratings_u)
-        print(ratings_v)
         
         # Mean of ratings given by user u (items rated by both users)
         mean_u = 0
@@ -72,7 +69,24 @@ class Algorithm:
             if (ru != 0 and rv != 0):
                 ratings_u.append(ru)
                 ratings_v.append(rv)
+
         return pearsonr(ratings_u, ratings_v)
 
-    def N(self, u, k):
-        print(u)
+    # u is the index of the user (not included in the results because it's not a neighbor of his self)
+    # i is the index of the item (movie)
+    # k is the limit of neighbors (lower or equal than 49)
+    # return a list of tuples, where the first value is the index of the neighbor and the second the PC between the user u and that neighbor
+    # return empty list if the user haven't rated the item i (movie)
+    # Note: The size of the retuned list could be lower than k
+    def neighbors(self, u, i, k):
+        n_users = len(self.matrix)
+        if (self.matrix[u][i] == 0):
+            return []
+
+        else:
+            neighbors = []
+            for v in range(n_users):
+                if (v != u and self.matrix[v][i] != 0):
+                    neighbors.append((v,self.pc(u,v)))
+            neighbors.sort(key=itemgetter(1), reverse=True)
+            return neighbors[0:k]

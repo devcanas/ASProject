@@ -10,7 +10,7 @@ record_mode = True \
 
 generator = Generator(empty_cell_percentage, record_mode)
 matrix = generator.matrix
-# matrix.pretty_print()
+#generator.pretty_print()
 
 print("%.2f percent of the matrix cells are empty" %
       (generator.empty_cells_percentage()))
@@ -19,3 +19,4 @@ alg = Algorithm(matrix)
 # PC test
 print(alg.pc(0, 4))
 print(alg.pclib(0,4))
+print(alg.neighbors(0,2,5))
