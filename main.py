@@ -24,9 +24,9 @@ alg = Algorithm(matrix)
 
 predicted_ratings = []
 for i in range(len(matrix[0])):
-    if matrix[0][i] == 0:
-        predicted_ratings.append(
-            alg.predicted_rating(0, i, alg.neighbors(0, i, 10)))
+    if (matrix[0][i] == 0):
+        n = alg.neighbors(0, i, 5)
+        predicted_ratings.append(alg.predicted_rating(0, i, n, 5.0, 0.5))
 
 print(predicted_ratings)
 

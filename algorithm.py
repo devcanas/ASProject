@@ -77,7 +77,6 @@ class Algorithm:
     # i is the index of the item (movie)
     # k is the limit of neighbors (lower or equal than 49)
     # return a list of tuples, where the first value is the index of the neighbor and the second the PC between the user u and that neighbor
-    # return empty list if the user haven't rated the item i (movie)
     # Note: The size of the retuned list could be lower than k
     def neighbors(self, u, i, k):
         n_users = len(self.matrix)
@@ -88,18 +87,27 @@ class Algorithm:
         neighbors.sort(key=itemgetter(1), reverse=True)
         return neighbors[0:k]
 
-    def predicted_rating(self, user, item, neighbors):
+    def rating_average(self, ratings):
+        n_items = len(ratings)
+        rated_by_u = 0
+        for i in range(n_items):
+            if (ratings[i] != 0):
+                rated_by_u += 1
+        return sum(ratings) / rated_by_u
 
-        rating_u_average = sum(self.matrix[user]) / len(self.matrix[user])
+    def predicted_rating(self, user, item, neighbors, maxval, minval):
+        # Calculate the average of the ratings of the user u
+        rating_u_average = self.rating_average(self.matrix[user])
+
         # copy the matrix so we can normalize its values
         matrix = [[self.matrix[x][y] for y in range(
             len(self.matrix[0]))] for x in range(len(self.matrix))]
         # normalize matrix
-        for u in range(len(matrix)):
-            for i in range(len(matrix[u])):
-                if matrix[u][i] != 0:
-                    u_average_rating = sum(matrix[u]) / len(matrix[u])
-                    matrix[u][i] = matrix[u][i] - u_average_rating
+        for v in range(len(matrix)):
+            for i in range(len(matrix[v])):
+                if matrix[v][i] != 0:
+                    rating_v_average = self.rating_average(self.matrix[v])
+                    matrix[v][i] = matrix[v][i] - rating_v_average
 
         top_sum = 0
         bottom_sum = 0
@@ -111,4 +119,4 @@ class Algorithm:
             bottom_sum += abs(wuv)
 
         predicted_rating = (top_sum / bottom_sum) + rating_u_average
-        return (user, item, round(predicted_rating*2)/2)
+        return (user, item, max(min(round(predicted_rating*2)/2, maxval),minval))
