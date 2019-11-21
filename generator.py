@@ -1,4 +1,5 @@
 from random import randint
+from termcolor import colored
 
 
 class Generator:
@@ -76,3 +77,21 @@ class Generator:
             ratings = lines[self.num_items:]
             self.matrix = list(
                 map(lambda ratings: [float(r) for r in ratings.split()], ratings))
+
+    def record_predicted(self, predicted_ratings):
+
+        f = open("matrix_files/predicted_matrix_{}_percent_empty.txt".format(
+            self.empty_cell_percentage), "w")
+
+        for i in predicted_ratings:
+            user, item, predicted_rating = i
+            self.matrix[user][item] = colored(predicted_rating, "green")
+
+        for movie in self.movies:
+            f.write("%s\n" % (movie))
+
+        for i in range(self.num_users):
+            for j in range(self.num_items):
+                f.write("{}\t".format(self.matrix[i][j]))
+                if j == self.num_items - 1:
+                    f.write("\n")

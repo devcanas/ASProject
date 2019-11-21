@@ -1,6 +1,7 @@
+from operator import itemgetter
 from math import pow, sqrt
 from scipy.stats import pearsonr
-from operator import itemgetter
+
 
 class Algorithm:
 
@@ -18,11 +19,11 @@ class Algorithm:
         for i in range(n_items):
             ru = self.matrix[u][i]
             rv = self.matrix[v][i]
-            
+
             if (ru != 0 and rv != 0):
                 ratings_u.append(ru)
                 ratings_v.append(rv)
-        
+
         # Mean of ratings given by user u (items rated by both users)
         mean_u = 0
         for i in ratings_u:
@@ -39,7 +40,7 @@ class Algorithm:
         up = 0
         for i in range(len(ratings_u)):
             up += (ratings_u[i] - mean_u) * (ratings_v[i] - mean_v)
-        
+
         down1 = 0
         for ru in ratings_u:
             v = (ru - mean_u)
@@ -65,7 +66,7 @@ class Algorithm:
         for i in range(n_items):
             ru = self.matrix[u][i]
             rv = self.matrix[v][i]
-            
+
             if (ru != 0 and rv != 0):
                 ratings_u.append(ru)
                 ratings_v.append(rv)
@@ -80,13 +81,34 @@ class Algorithm:
     # Note: The size of the retuned list could be lower than k
     def neighbors(self, u, i, k):
         n_users = len(self.matrix)
-        if (self.matrix[u][i] == 0):
-            return []
+        neighbors = []
+        for v in range(n_users):
+            if (v != u and self.matrix[v][i] != 0):
+                neighbors.append((v, self.pc(u, v)))
+        neighbors.sort(key=itemgetter(1), reverse=True)
+        return neighbors[0:k]
 
-        else:
-            neighbors = []
-            for v in range(n_users):
-                if (v != u and self.matrix[v][i] != 0):
-                    neighbors.append((v,self.pc(u,v)))
-            neighbors.sort(key=itemgetter(1), reverse=True)
-            return neighbors[0:k]
+    def predicted_rating(self, user, item, neighbors):
+
+        rating_u_average = sum(self.matrix[user]) / len(self.matrix[user])
+        # copy the matrix so we can normalize its values
+        matrix = [[self.matrix[x][y] for y in range(
+            len(self.matrix[0]))] for x in range(len(self.matrix))]
+        # normalize matrix
+        for u in range(len(matrix)):
+            for i in range(len(matrix[u])):
+                if matrix[u][i] != 0:
+                    u_average_rating = sum(matrix[u]) / len(matrix[u])
+                    matrix[u][i] = matrix[u][i] - u_average_rating
+
+        top_sum = 0
+        bottom_sum = 0
+
+        for neighbor in neighbors:
+            v, wuv = neighbor
+            h_rvi = matrix[v][item]
+            top_sum += wuv * h_rvi
+            bottom_sum += abs(wuv)
+
+        predicted_rating = (top_sum / bottom_sum) + rating_u_average
+        return (user, item, round(predicted_rating*2)/2)
