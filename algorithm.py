@@ -104,9 +104,9 @@ class Algorithm:
             len(self.matrix[0]))] for x in range(len(self.matrix))]
         # normalize matrix
         for v in range(len(matrix)):
+            rating_v_average = self.rating_average(self.matrix[v])
             for i in range(len(matrix[v])):
                 if matrix[v][i] != 0:
-                    rating_v_average = self.rating_average(self.matrix[v])
                     matrix[v][i] = matrix[v][i] - rating_v_average
 
         top_sum = 0
