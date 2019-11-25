@@ -3,13 +3,42 @@ from math import pow, sqrt
 from scipy.stats import pearsonr
 
 
-class Algorithm:
+class Rating:
+    def __init__(self, unrounded_rating):
+        self.__unrounded_rating = unrounded_rating
+        self.__maxval = 5.0
+        self.__minval = 0.5
 
-    def __init__(self, matrix):
+    @property
+    def rounded(self):
+        return max(min(round(self.__unrounded_rating*2)/2, self.__maxval), self.__minval)
+
+    @property
+    def unrounded(self):
+        return self.__unrounded_rating
+
+
+class KNN_users:
+
+    def __init__(self, matrix, k, n):
         self.matrix = matrix
+        self.k = k
+        self.n = n
+
+    def run(self):
+        predicted_ratings = []
+        for i in range(len(self.matrix)):
+            for j in range(len(self.matrix[0])):
+                if (self.matrix[i][j] == 0):
+                    n = self.__neighbors(i, j, self.k)
+                    predicted_rating = self.__predicted_rating(
+                        i, j, n, 5.0, 0.5)
+                    predicted_ratings.append(predicted_rating)
+
+        return predicted_ratings
 
     # Calculate the PC between 2 users, given their index in the matrix (u and v)
-    def pc(self, u, v):
+    def __pc(self, u, v):
         n_items = len(self.matrix[0])
         n_users = len(self.matrix)
 
@@ -56,7 +85,7 @@ class Algorithm:
         # If the denominator is 0, return 1 (higher value of PC)
         return 1 if down == 0 else up/down
 
-    def pclib(self, u, v):
+    def __pclib(self, u, v):
         n_items = len(self.matrix[0])
         n_users = len(self.matrix)
 
@@ -78,16 +107,16 @@ class Algorithm:
     # k is the limit of neighbors (lower or equal than 49)
     # return a list of tuples, where the first value is the index of the neighbor and the second the PC between the user u and that neighbor
     # Note: The size of the retuned list could be lower than k
-    def neighbors(self, u, i, k):
+    def __neighbors(self, u, i, k):
         n_users = len(self.matrix)
         neighbors = []
         for v in range(n_users):
             if (v != u and self.matrix[v][i] != 0):
-                neighbors.append((v, self.pc(u, v)))
+                neighbors.append((v, self.__pc(u, v)))
         neighbors.sort(key=itemgetter(1), reverse=True)
         return neighbors[0:k]
 
-    def rating_average(self, ratings):
+    def __rating_average(self, ratings):
         n_items = len(ratings)
         rated_by_u = 0
         for i in range(n_items):
@@ -95,16 +124,16 @@ class Algorithm:
                 rated_by_u += 1
         return sum(ratings) / rated_by_u
 
-    def predicted_rating(self, user, item, neighbors, maxval, minval):
+    def __predicted_rating(self, user, item, neighbors, maxval, minval):
         # Calculate the average of the ratings of the user u
-        rating_u_average = self.rating_average(self.matrix[user])
+        rating_u_average = self.__rating_average(self.matrix[user])
 
         # copy the matrix so we can normalize its values
         matrix = [[self.matrix[x][y] for y in range(
             len(self.matrix[0]))] for x in range(len(self.matrix))]
         # normalize matrix
         for v in range(len(matrix)):
-            rating_v_average = self.rating_average(self.matrix[v])
+            rating_v_average = self.__rating_average(self.matrix[v])
             for i in range(len(matrix[v])):
                 if matrix[v][i] != 0:
                     matrix[v][i] = matrix[v][i] - rating_v_average
@@ -118,5 +147,5 @@ class Algorithm:
             top_sum += wuv * h_rvi
             bottom_sum += abs(wuv)
 
-        predicted_rating = (top_sum / bottom_sum) + rating_u_average
-        return (user, item, max(min(round(predicted_rating*2)/2, maxval),minval))
+        predicted_rating = Rating((top_sum / bottom_sum) + rating_u_average)
+        return (user, item, predicted_rating)

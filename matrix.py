@@ -1,10 +1,11 @@
 from random import randint
 from termcolor import colored
+from operator import itemgetter
 
 
-class Generator:
+class Matrix:
 
-    def __init__(self, empty_cell_percentage, record_mode):
+    def __init__(self, empty_cell_percentage, record_mode, keep_original=False):
         self.num_users = 50
         self.num_items = 20
         self.matrix = [[0 for x in range(self.num_users)]
@@ -14,6 +15,7 @@ class Generator:
         self.record_mode = record_mode
         self.file = "matrix_files/matrix_{}_percent_empty.txt".format(
             empty_cell_percentage)
+        self.keep_original = keep_original
         self.__populate()
 
     def __populate(self):
@@ -24,6 +26,9 @@ class Generator:
 
         # reads from the fully populated matrix and only then empties some of the cells
         self.read()
+
+        if self.keep_original:
+            return
 
         for i in range(self.num_users):
             for j in range(self.num_items):
@@ -85,7 +90,8 @@ class Generator:
 
         for i in predicted_ratings:
             user, item, predicted_rating = i
-            self.matrix[user][item] = colored(predicted_rating, "green")
+            self.matrix[user][item] = colored(
+                predicted_rating.rounded, "green")
 
         for movie in self.movies:
             f.write("%s\n" % (movie))
@@ -95,3 +101,16 @@ class Generator:
                 f.write("{}\t".format(self.matrix[i][j]))
                 if j == self.num_items - 1:
                     f.write("\n")
+
+    def compare(self, predicted_ratings):
+        compare_array = []
+        for rating in predicted_ratings:
+            user, item, pred_rating = rating
+            pred_rating_val = pred_rating.unrounded
+
+            difference_real_predicted = abs(
+                self.matrix[user][item] - pred_rating_val)
+            compare_array.append((user, item, difference_real_predicted))
+        # sort in ascending order of difference_real_predicted
+        # (i.e. how good the prediction is)
+        return sorted(compare_array, key=itemgetter(2))
