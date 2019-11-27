@@ -55,15 +55,17 @@ class KNN_users:
 
         # Mean of ratings given by user u (items rated by both users)
         mean_u = 0
-        for i in ratings_u:
-            mean_u += i
-        mean_u /= len(ratings_u)
+        if (len(ratings_u) > 0): 
+            for i in ratings_u:
+                mean_u += i
+            mean_u /= len(ratings_u) 
 
         # Mean of ratings given by user v (items rated by both users)
         mean_v = 0
-        for i in ratings_v:
-            mean_v += i
-        mean_v /= len(ratings_v)
+        if (len(ratings_v) > 0):
+            for i in ratings_v:
+                mean_v += i
+            mean_v /= len(ratings_v)
 
         # Calculation of PC
         up = 0
@@ -122,7 +124,7 @@ class KNN_users:
         for i in range(n_items):
             if (ratings[i] != 0):
                 rated_by_u += 1
-        return sum(ratings) / rated_by_u
+        return 0 if rated_by_u == 0 else sum(ratings) / rated_by_u
 
     def __predicted_rating(self, user, item, neighbors, maxval, minval):
         # Calculate the average of the ratings of the user u
@@ -147,5 +149,9 @@ class KNN_users:
             top_sum += wuv * h_rvi
             bottom_sum += abs(wuv)
 
-        predicted_rating = Rating((top_sum / bottom_sum) + rating_u_average)
+        if bottom_sum == 0:
+            predicted_rating = Rating(minval)
+        else:
+            predicted_rating = Rating((top_sum / bottom_sum) + rating_u_average)
+
         return (user, item, predicted_rating)

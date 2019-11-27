@@ -1,7 +1,7 @@
 from random import randint
 from termcolor import colored
 from operator import itemgetter
-
+from algorithm import *
 
 class Matrix:
 
@@ -30,13 +30,18 @@ class Matrix:
         if self.keep_original:
             return
 
-        for i in range(self.num_users):
-            for j in range(self.num_items):
-                cell_is_empty = randint(0, 100) < self.empty_cell_percentage
-                if cell_is_empty:
-                    self.matrix[i][j] = 0
-
-        self.persist()
+        counter = 0
+        while (True):
+            for i in range(self.num_users):
+                for j in range(self.num_items):
+                    if (counter * 100.0 / (self.num_users * self.num_items) < self.empty_cell_percentage):
+                        cell_is_empty = randint(1, 100) == 1
+                        if cell_is_empty and self.matrix[i][j] != 0:
+                            self.matrix[i][j] = 0
+                            counter += 1
+                    else:
+                        self.persist()
+                        return
 
     def pretty_print(self):
         for i in range(self.num_users):
@@ -88,17 +93,37 @@ class Matrix:
         f = open("matrix_files/predicted_matrix_{}_percent_empty.txt".format(
             self.empty_cell_percentage), "w")
 
+        matrix_predicted = [row[:] for row in self.matrix]
+
         for i in predicted_ratings:
             user, item, predicted_rating = i
-            self.matrix[user][item] = colored(
-                predicted_rating.rounded, "green")
+            matrix_predicted[user][item] = predicted_rating.unrounded
 
         for movie in self.movies:
             f.write("%s\n" % (movie))
 
         for i in range(self.num_users):
             for j in range(self.num_items):
-                f.write("{}\t".format(self.matrix[i][j]))
+                f.write("{}\t".format(matrix_predicted[i][j]))
+                if j == self.num_items - 1:
+                    f.write("\n")
+
+    def record_predicted_rounded(self, predicted_ratings):
+        f = open("matrix_files/predicted_matrix_rounded_{}_percent_empty.txt".format(
+            self.empty_cell_percentage), "w")
+
+        matrix_predicted = [row[:] for row in self.matrix]
+
+        for i in predicted_ratings:
+            user, item, predicted_rating = i
+            matrix_predicted[user][item] = predicted_rating.rounded
+
+        for movie in self.movies:
+            f.write("%s\n" % (movie))
+
+        for i in range(self.num_users):
+            for j in range(self.num_items):
+                f.write("{}\t".format(matrix_predicted[i][j]))
                 if j == self.num_items - 1:
                     f.write("\n")
 

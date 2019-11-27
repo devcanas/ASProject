@@ -45,3 +45,4 @@ print(best_predicted_items)
 # TODO: generate an excel file with this matrix
 # currently it is just generating a txt file
 gen_matrix.record_predicted(predicted_ratings)
+gen_matrix.record_predicted_rounded(predicted_ratings)
