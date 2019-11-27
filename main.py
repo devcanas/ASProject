@@ -37,9 +37,15 @@ alg = KNN_users(matrix, k_neighbors, n_rated_items)
 # running the algorithm returns the predicted ratings for the entire matrix
 # gets the list of top predicted items
 predicted_ratings = alg.run()
-best_predicted_items = original_matrix.compare(predicted_ratings)[
-    0:n_rated_items]
-print(best_predicted_items)
+best_predicted_items = original_matrix.n_top(predicted_ratings, n_rated_items)
+print("N-top movies:")
+for i in best_predicted_items:
+    print(i)
+
+print("N-top movies rounded:")
+best_predicted_items_rounded = original_matrix.n_top_rounded(predicted_ratings, n_rated_items)
+for i in best_predicted_items_rounded:
+    print(i)
 # generates a new matrix with the empty cells filled with
 # the predicted ratings
 # TODO: generate an excel file with this matrix

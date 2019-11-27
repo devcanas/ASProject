@@ -127,15 +127,38 @@ class Matrix:
                 if j == self.num_items - 1:
                     f.write("\n")
 
-    def compare(self, predicted_ratings):
+    def n_top(self, predicted_ratings, n):
         compare_array = []
-        for rating in predicted_ratings:
-            user, item, pred_rating = rating
-            pred_rating_val = pred_rating.unrounded
 
-            difference_real_predicted = abs(
-                self.matrix[user][item] - pred_rating_val)
-            compare_array.append((user, item, difference_real_predicted))
-        # sort in ascending order of difference_real_predicted
-        # (i.e. how good the prediction is)
-        return sorted(compare_array, key=itemgetter(2))
+        matrix_predicted = [row[:] for row in self.matrix]
+
+        for i in predicted_ratings:
+            user, item, predicted_rating = i
+            matrix_predicted[user][item] = predicted_rating.unrounded
+
+        for m in range(self.num_items):
+            error = 0
+            for u in range(self.num_users):
+                error += abs(self.matrix[u][m] - matrix_predicted[u][m])
+            compare_array.append((m, self.movies[m], error))
+
+        # sort in ascending order of error (less error better predictions)
+        return sorted(compare_array, key=itemgetter(2))[0:n]
+
+    def n_top_rounded(self, predicted_ratings, n):
+        compare_array = []
+
+        matrix_predicted = [row[:] for row in self.matrix]
+
+        for i in predicted_ratings:
+            user, item, predicted_rating = i
+            matrix_predicted[user][item] = predicted_rating.rounded
+
+        for m in range(self.num_items):
+            error = 0
+            for u in range(self.num_users):
+                error += abs(self.matrix[u][m] - matrix_predicted[u][m])
+            compare_array.append((m, self.movies[m], error))
+
+        # sort in ascending order of error (less error better predictions)
+        return sorted(compare_array, key=itemgetter(2))[0:n]
