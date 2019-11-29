@@ -1,6 +1,10 @@
 from operator import itemgetter
 from math import pow, sqrt
 from scipy.stats import pearsonr
+from surprise import Dataset
+from surprise import Reader
+from surprise import SVD
+import os
 
 
 class Rating:
@@ -17,9 +21,10 @@ class Rating:
     def unrounded(self):
         return self.__unrounded_rating
 
+    def __repr__(self):
+        return "<Rating rounded:" + str(self.rounded) + " unrounded:" + str(self.unrounded) + ">"
 
 class KNN_users:
-
     def __init__(self, matrix, k, n):
         self.matrix = matrix
         self.k = k
@@ -155,3 +160,29 @@ class KNN_users:
             predicted_rating = Rating((top_sum / bottom_sum) + rating_u_average)
 
         return (user, item, predicted_rating)
+
+class SVD_alg:
+    def __init__(self, matrix, rel_path):
+        self.matrix = matrix
+        script_dir = os.path.dirname(__file__)
+        file_path = os.path.join(script_dir, rel_path)
+        reader = Reader(line_format='user item rating', sep='\t')
+        self.dataset = Dataset.load_from_file(file_path, reader=reader)
+        self.algo = SVD()
+
+    def fit(self):
+        trainset = self.dataset.build_full_trainset()
+        
+        self.algo.fit(trainset)
+
+    def predict(self):
+        predictions = []
+        for i in range(len(self.matrix)):
+            for j in range(len(self.matrix[0])):
+                if (self.matrix[i][j] == 0):
+                    prediction = self.algo.predict(str(i), str(j)).est
+                    predictions.append((i, j, Rating(prediction)))
+        return predictions
+
+
+

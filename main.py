@@ -48,7 +48,22 @@ for i in best_predicted_items_rounded:
     print(i)
 # generates a new matrix with the empty cells filled with
 # the predicted ratings
-# TODO: generate an excel file with this matrix
-# currently it is just generating a txt file
 gen_matrix.record_predicted(predicted_ratings)
 gen_matrix.record_predicted_rounded(predicted_ratings)
+
+# Make the predictions using Singular Value Decomposition (SVD)
+rel_path = 'matrix_files/matrix_' + str(empty_cell_percentage) + '_percent_empty_dataset.txt'
+svd = SVD_alg(matrix, rel_path)
+svd.fit()
+predicted_ratings = svd.predict()
+
+# Give the recommendations
+best_predicted_items = original_matrix.n_top(predicted_ratings, n_rated_items)
+print("N-top movies:")
+for i in best_predicted_items:
+    print(i)
+
+print("N-top movies rounded:")
+best_predicted_items_rounded = original_matrix.n_top_rounded(predicted_ratings, n_rated_items)
+for i in best_predicted_items_rounded:
+    print(i)

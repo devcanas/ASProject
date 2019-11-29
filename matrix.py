@@ -13,7 +13,7 @@ class Matrix:
         self.movies = []
         self.empty_cell_percentage = empty_cell_percentage
         self.record_mode = record_mode
-        self.file = "matrix_files/matrix_{}_percent_empty.txt".format(
+        self.file = "matrix_files/matrix_{}_percent_empty".format(
             empty_cell_percentage)
         self.keep_original = keep_original
         self.__populate()
@@ -21,7 +21,7 @@ class Matrix:
     def __populate(self):
         # reads directly from the file holding a matrix with the desired percentage of empty cells
         if not self.record_mode:
-            self.read(self.file)
+            self.read(self.file + '.txt')
             return
 
         # reads from the fully populated matrix and only then empties some of the cells
@@ -41,6 +41,7 @@ class Matrix:
                             counter += 1
                     else:
                         self.persist()
+                        self.persist_dataset()
                         return
 
     def pretty_print(self):
@@ -61,9 +62,9 @@ class Matrix:
         return counter * 100 / (self.num_users * self.num_items)
 
     def persist(self):
-        print("Saving to file: %s\n\n" % (self.file))
+        print("Saving to file: %s\n\n" % (self.file + ".txt"))
 
-        f = open(self.file, "w")
+        f = open(self.file + ".txt", "w")
 
         for movie in self.movies:
             f.write("%s\n" % (movie))
@@ -73,6 +74,14 @@ class Matrix:
                 f.write("{}\t".format(self.matrix[i][j]))
                 if j == self.num_items - 1:
                     f.write("\n")
+
+    def persist_dataset(self):
+        f = open(self.file + "_dataset.txt", "w")
+        for i in range(self.num_users):
+            for j in range(self.num_items):
+                if (self.matrix[i][j] != 0):
+                    f.write(str(i) + "\t" + str(j) + "\t" + str(self.matrix[i][j]) + "\n")
+
 
     def read(self, file="matrix_files/matrix.txt"):
         print("Reading from file: %s\n\n" % (file))
@@ -127,38 +136,28 @@ class Matrix:
                 if j == self.num_items - 1:
                     f.write("\n")
 
-    def n_top(self, predicted_ratings, n):
-        compare_array = []
+    def n_top(self, predicted_ratings, n, threshold=4):
+        users_recommendations = []
 
-        matrix_predicted = [row[:] for row in self.matrix]
+        for i in range(self.num_users):
+            user_prs = []
+            for p in predicted_ratings:
+                user, item, predicted_rating = p
+                if (user == i and predicted_rating.unrounded >= threshold):
+                    user_prs.append((item, predicted_rating.unrounded))
+            users_recommendations.append((i, sorted(user_prs, key=itemgetter(1), reverse=True)[0:n]))
 
-        for i in predicted_ratings:
-            user, item, predicted_rating = i
-            matrix_predicted[user][item] = predicted_rating.unrounded
+        return users_recommendations
 
-        for m in range(self.num_items):
-            error = 0
-            for u in range(self.num_users):
-                error += abs(self.matrix[u][m] - matrix_predicted[u][m])
-            compare_array.append((m, self.movies[m], error))
+    def n_top_rounded(self, predicted_ratings, n, threshold=4):
+        users_recommendations = []
 
-        # sort in ascending order of error (less error better predictions)
-        return sorted(compare_array, key=itemgetter(2))[0:n]
+        for i in range(self.num_users):
+            user_prs = []
+            for p in predicted_ratings:
+                user, item, predicted_rating = p
+                if (user == i and predicted_rating.rounded >= threshold):
+                    user_prs.append((item, predicted_rating.rounded))
+            users_recommendations.append((i, sorted(user_prs, key=itemgetter(1), reverse=True)[0:n]))
 
-    def n_top_rounded(self, predicted_ratings, n):
-        compare_array = []
-
-        matrix_predicted = [row[:] for row in self.matrix]
-
-        for i in predicted_ratings:
-            user, item, predicted_rating = i
-            matrix_predicted[user][item] = predicted_rating.rounded
-
-        for m in range(self.num_items):
-            error = 0
-            for u in range(self.num_users):
-                error += abs(self.matrix[u][m] - matrix_predicted[u][m])
-            compare_array.append((m, self.movies[m], error))
-
-        # sort in ascending order of error (less error better predictions)
-        return sorted(compare_array, key=itemgetter(2))[0:n]
+        return users_recommendations
