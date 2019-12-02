@@ -3,6 +3,7 @@ from termcolor import colored
 from operator import itemgetter
 from algorithm import *
 
+
 class Matrix:
 
     def __init__(self, empty_cell_percentage, record_mode, keep_original=False):
@@ -21,7 +22,7 @@ class Matrix:
     def __populate(self):
         # reads directly from the file holding a matrix with the desired percentage of empty cells
         if not self.record_mode:
-            self.read(self.file + '.txt')
+            self.read()
             return
 
         # reads from the fully populated matrix and only then empties some of the cells
@@ -62,102 +63,106 @@ class Matrix:
         return counter * 100 / (self.num_users * self.num_items)
 
     def persist(self):
-        print("Saving to file: %s\n\n" % (self.file + ".txt"))
-
-        f = open(self.file + ".txt", "w")
-
-        for movie in self.movies:
-            f.write("%s\n" % (movie))
+        f = open(self.file + ".csv", "w")
 
         for i in range(self.num_users):
             for j in range(self.num_items):
-                f.write("{}\t".format(self.matrix[i][j]))
+                f.write("{}".format(self.matrix[i][j]))
                 if j == self.num_items - 1:
                     f.write("\n")
+                else:
+                    f.write(";")
 
     def persist_dataset(self):
-        f = open(self.file + "_dataset.txt", "w")
+        f = open(self.file + "_dataset.csv", "w")
         for i in range(self.num_users):
             for j in range(self.num_items):
                 if (self.matrix[i][j] != 0):
-                    f.write(str(i) + "\t" + str(j) + "\t" + str(self.matrix[i][j]) + "\n")
+                    f.write(str(i) + ";" + str(j) + ";" + str(self.matrix[i][j]) + "\n")
 
 
-    def read(self, file="matrix_files/matrix.txt"):
-        print("Reading from file: %s\n\n" % (file))
+    def read(self):
+        file="matrix_files/matrix.txt"
 
-        self.matrix = []
         with open(file) as f:
             lines = f.readlines()
 
             movies = lines[:self.num_items]
             self.movies = list(map(lambda x: x.strip(), movies))
 
-            ratings = lines[self.num_items:]
+        if(self.record_mode == False):
+            file = self.file + ".csv"
+
+        self.matrix = []
+
+        with open(file) as f:
+            lines = f.readlines()
+            ratings = lines
+            separator = ';'
+            if(self.record_mode):
+                ratings = ratings[self.num_items:]
+                separator = ' '
             self.matrix = list(
-                map(lambda ratings: [float(r) for r in ratings.split()], ratings))
+                map(lambda ratings: [float(r) for r in ratings.split(separator)], ratings))
 
-    def record_predicted(self, predicted_ratings):
+    def record_predicted(self, predicted_ratings, alg, rounded=False):
+        file = "matrix_files/{}_predicted_matrix_{}_percent_empty.csv".format(alg, self.empty_cell_percentage)
 
-        f = open("matrix_files/predicted_matrix_{}_percent_empty.txt".format(
-            self.empty_cell_percentage), "w")
-
-        matrix_predicted = [row[:] for row in self.matrix]
-
-        for i in predicted_ratings:
-            user, item, predicted_rating = i
-            matrix_predicted[user][item] = predicted_rating.unrounded
-
-        for movie in self.movies:
-            f.write("%s\n" % (movie))
-
-        for i in range(self.num_users):
-            for j in range(self.num_items):
-                f.write("{}\t".format(matrix_predicted[i][j]))
-                if j == self.num_items - 1:
-                    f.write("\n")
-
-    def record_predicted_rounded(self, predicted_ratings):
-        f = open("matrix_files/predicted_matrix_rounded_{}_percent_empty.txt".format(
-            self.empty_cell_percentage), "w")
+        if(rounded):
+            file = "matrix_files/{}_predicted_matrix_rounded_{}_percent_empty.csv".format(alg, self.empty_cell_percentage)
+            
+        f = open(file, "w")
 
         matrix_predicted = [row[:] for row in self.matrix]
 
         for i in predicted_ratings:
             user, item, predicted_rating = i
-            matrix_predicted[user][item] = predicted_rating.rounded
+            p_rating = predicted_rating.unrounded
+            if(rounded):
+                p_rating = predicted_rating.rounded
+            matrix_predicted[user][item] = p_rating
 
         for movie in self.movies:
-            f.write("%s\n" % (movie))
+            f.write("%s;" % (movie))
+        f.write("\n")
 
         for i in range(self.num_users):
             for j in range(self.num_items):
-                f.write("{}\t".format(matrix_predicted[i][j]))
+                f.write("{};".format(matrix_predicted[i][j]).replace('.',','))
                 if j == self.num_items - 1:
                     f.write("\n")
 
-    def n_top(self, predicted_ratings, n, threshold=4):
+    def record_n_top(self, predicted_ratings, n, alg, rounded=False, threshold=3.5):
         users_recommendations = []
 
         for i in range(self.num_users):
             user_prs = []
             for p in predicted_ratings:
                 user, item, predicted_rating = p
-                if (user == i and predicted_rating.unrounded >= threshold):
-                    user_prs.append((item, predicted_rating.unrounded))
+                p_rating = predicted_rating.unrounded
+                if(rounded):
+                    p_rating = predicted_rating.rounded
+                if (user == i and p_rating >= threshold):
+                    user_prs.append((item, p_rating))
             users_recommendations.append((i, sorted(user_prs, key=itemgetter(1), reverse=True)[0:n]))
 
-        return users_recommendations
+        # Record
+        file = "matrix_files/{}_n_top_{}_percent_empty.csv".format(alg, self.empty_cell_percentage)
 
-    def n_top_rounded(self, predicted_ratings, n, threshold=4):
-        users_recommendations = []
+        if(rounded):
+            file = "matrix_files/{}_n_top_{}_percent_empty.csv".format(alg, self.empty_cell_percentage)
 
-        for i in range(self.num_users):
-            user_prs = []
-            for p in predicted_ratings:
-                user, item, predicted_rating = p
-                if (user == i and predicted_rating.rounded >= threshold):
-                    user_prs.append((item, predicted_rating.rounded))
-            users_recommendations.append((i, sorted(user_prs, key=itemgetter(1), reverse=True)[0:n]))
+        f = open(file, "w")
 
-        return users_recommendations
+        f.write("User ID;")
+        for i in range(n):
+            f.write("Recommendation {};".format(i))
+        f.write("\n")
+
+        for user_recommendations in users_recommendations:
+            user, recommendations = user_recommendations
+            f.write(str(user + 1))
+            for recommendation in recommendations:
+                movie_id, rating = recommendation
+                f.write(";Movie ID: {} / Movie: {} / Predicted rating: {}".format(str(movie_id + 1), self.movies[movie_id], str(rating).replace('.',',')))
+            f.write("\n")

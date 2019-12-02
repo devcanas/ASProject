@@ -6,6 +6,52 @@ from surprise import Reader
 from surprise import SVD
 import os
 
+def mae(original_matrix, predictions, rounded=False):
+    matrix = original_matrix.matrix
+    error = 0
+    for prediction in predictions:
+        user, movie, rating = prediction
+        if(rounded):
+            error += abs(matrix[user][movie] - rating.rounded)
+        else:
+            error += abs(matrix[user][movie] - rating.unrounded)
+    return error/len(predictions)
+
+def precision(original_matrix, predictions, rounded=False, threshold=3.5):
+    relevant_recommentations, _, recommended_items = _relevant_recommentations(original_matrix, predictions, rounded, threshold)
+    
+    return relevant_recommentations / recommended_items if recommended_items != 0 else 1
+
+
+def recall(original_matrix, predictions, rounded=False, threshold=3.5):
+    matrix = original_matrix.matrix
+    relevant_recommentations, real_relevants, _ = _relevant_recommentations(original_matrix, predictions, rounded, threshold)
+
+    return relevant_recommentations / real_relevants if real_relevants != 0 else 1
+
+def _relevant_recommentations(original_matrix, predictions, rounded, threshold):
+    matrix = original_matrix.matrix
+    n_users = len(matrix)
+    n_movies = len(matrix[0])
+    real_relevants = []
+    recommended_items = []
+    for i in range(n_users):
+        for j in range(n_movies):
+            if (matrix[i][j] >= threshold):
+                real_relevants.append((i,j))
+    for prediction in predictions:
+        user, movie, rating = prediction
+        if(rounded and rating.rounded >= threshold):
+            recommended_items.append((user,  movie))
+        if(not rounded and rating.unrounded >= threshold):
+            recommended_items.append((user,  movie))
+
+    relevant_recommentations = 0
+    for rec in recommended_items:
+        if (rec in real_relevants):
+            relevant_recommentations += 1
+
+    return (relevant_recommentations, len(real_relevants), len(recommended_items))
 
 class Rating:
     def __init__(self, unrounded_rating):
@@ -25,10 +71,9 @@ class Rating:
         return "<Rating rounded:" + str(self.rounded) + " unrounded:" + str(self.unrounded) + ">"
 
 class KNN_users:
-    def __init__(self, matrix, k, n):
+    def __init__(self, matrix, k):
         self.matrix = matrix
         self.k = k
-        self.n = n
 
     def run(self):
         predicted_ratings = []
@@ -166,7 +211,7 @@ class SVD_alg:
         self.matrix = matrix
         script_dir = os.path.dirname(__file__)
         file_path = os.path.join(script_dir, rel_path)
-        reader = Reader(line_format='user item rating', sep='\t')
+        reader = Reader(line_format='user item rating', sep=';')
         self.dataset = Dataset.load_from_file(file_path, reader=reader)
         self.algo = SVD()
 
@@ -183,6 +228,3 @@ class SVD_alg:
                     prediction = self.algo.predict(str(i), str(j)).est
                     predictions.append((i, j, Rating(prediction)))
         return predictions
-
-
-

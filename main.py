@@ -19,51 +19,61 @@ k_neighbors = int(sys.argv[2])
 n_rated_items = int(sys.argv[3])
 record_mode = len(sys.argv) == 5 and sys.argv[4] == "--recordMode"
 
-# get original and full matrix to compare with the predicted values
+# Get original full matrix to compare with the predicted values
 keep_original = True  # prevents matrix from populating with empty cells
 original_matrix = Matrix(0, True, keep_original)
 
-# True write in matrix_<empty_cell_percentage>_empty_cells.txt / False read from matrix.txt
+
+# record_mode: True write in matrix_<empty_cell_percentage>_empty_cells.txt / False read from matrix.txt
 gen_matrix = Matrix(empty_cell_percentage, record_mode)
 matrix = gen_matrix.matrix
 
 print("%.2f percent of the matrix cells are empty" %
       (gen_matrix.empty_cells_percentage()))
 
-# running k-nearest-neighbors with users
-# KNN class instance with the matrix passed as parameter
-alg = KNN_users(matrix, k_neighbors, n_rated_items)
-
-# running the algorithm returns the predicted ratings for the entire matrix
-# gets the list of top predicted items
+# Make the predictions using K-Nearest-Neighbors with users
+alg = KNN_users(matrix, k_neighbors)
 predicted_ratings = alg.run()
-best_predicted_items = original_matrix.n_top(predicted_ratings, n_rated_items)
-print("N-top movies:")
-for i in best_predicted_items:
-    print(i)
 
-print("N-top movies rounded:")
-best_predicted_items_rounded = original_matrix.n_top_rounded(predicted_ratings, n_rated_items)
-for i in best_predicted_items_rounded:
-    print(i)
-# generates a new matrix with the empty cells filled with
-# the predicted ratings
-gen_matrix.record_predicted(predicted_ratings)
-gen_matrix.record_predicted_rounded(predicted_ratings)
+## Save predictions
+gen_matrix.record_predicted(predicted_ratings, "knn")
+gen_matrix.record_predicted(predicted_ratings, "knn", rounded=True)
+
+## Give the recommendations
+gen_matrix.record_n_top(predicted_ratings, n_rated_items, "knn")
+gen_matrix.record_n_top(predicted_ratings, n_rated_items, "knn", rounded=True)
+
 
 # Make the predictions using Singular Value Decomposition (SVD)
-rel_path = 'matrix_files/matrix_' + str(empty_cell_percentage) + '_percent_empty_dataset.txt'
+rel_path = 'matrix_files/matrix_' + str(empty_cell_percentage) + '_percent_empty_dataset.csv'
 svd = SVD_alg(matrix, rel_path)
 svd.fit()
-predicted_ratings = svd.predict()
+predicted_ratings_svd = svd.predict()
 
-# Give the recommendations
-best_predicted_items = original_matrix.n_top(predicted_ratings, n_rated_items)
-print("N-top movies:")
-for i in best_predicted_items:
-    print(i)
+## Save predictions
+gen_matrix.record_predicted(predicted_ratings_svd, "svd")
+gen_matrix.record_predicted(predicted_ratings_svd, "svd", rounded=True)
 
-print("N-top movies rounded:")
-best_predicted_items_rounded = original_matrix.n_top_rounded(predicted_ratings, n_rated_items)
-for i in best_predicted_items_rounded:
-    print(i)
+## Give the recommendations
+gen_matrix.record_n_top(predicted_ratings_svd, n_rated_items, "svd")
+gen_matrix.record_n_top(predicted_ratings_svd, n_rated_items, "svd", rounded=True)
+
+# Measure quality of predictions (MAE)
+print("-----MAE (Mean Absolute Error)-----")
+print("MAE KNN: " + str(mae(original_matrix, predicted_ratings)))
+print("MAE SVD: " + str(mae(original_matrix, predicted_ratings_svd)))
+print("MAE KNN rounded: " + str(mae(original_matrix, predicted_ratings, rounded=True)))
+print("MAE SVD rounded: " + str(mae(original_matrix, predicted_ratings_svd, rounded=True)))
+print()
+# Measure precision and recall
+print("-----Precision-----")
+print("Precision KNN: " + str(precision(original_matrix, predicted_ratings)))
+print("Precision SVD: " + str(precision(original_matrix, predicted_ratings_svd)))
+print("Precision KNN rounded: " + str(precision(original_matrix, predicted_ratings, rounded=True)))
+print("Precision SVD rounded: " + str(precision(original_matrix, predicted_ratings_svd, rounded=True)))
+print()
+print("-----Recall-----")
+print("Recall KNN: " + str(recall(original_matrix, predicted_ratings)))
+print("Recall SVD: " + str(recall(original_matrix, predicted_ratings_svd)))
+print("Recall KNN rounded: " + str(recall(original_matrix, predicted_ratings, rounded=True)))
+print("Recall SVD rounded: " + str(recall(original_matrix, predicted_ratings_svd, rounded=True)))
