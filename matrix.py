@@ -1,8 +1,6 @@
 from random import randint
-from termcolor import colored
 from operator import itemgetter
 from algorithm import *
-
 
 class Matrix:
 
@@ -132,9 +130,9 @@ class Matrix:
                 if j == self.num_items - 1:
                     f.write("\n")
 
-    def record_n_top(self, predicted_ratings, n, alg, rounded=False, threshold=3.5):
+    def record_n_top(self, predicted_ratings, n, alg, rounded=False, threshold=4):
         users_recommendations = []
-
+        users_filtered_recommendations = []
         for i in range(self.num_users):
             user_prs = []
             for p in predicted_ratings:
@@ -145,6 +143,8 @@ class Matrix:
                 if (user == i and p_rating >= threshold):
                     user_prs.append((item, p_rating))
             users_recommendations.append((i, sorted(user_prs, key=itemgetter(1), reverse=True)[0:n]))
+            for u in user_prs:
+                users_filtered_recommendations.append(u)
 
         # Record
         file = "matrix_files/{}_n_top_{}_percent_empty.csv".format(alg, self.empty_cell_percentage)
@@ -166,3 +166,4 @@ class Matrix:
                 movie_id, rating = recommendation
                 f.write(";Movie ID: {} / Movie: {} / Predicted rating: {}".format(str(movie_id + 1), self.movies[movie_id], str(rating).replace('.',',')))
             f.write("\n")
+        return users_filtered_recommendations

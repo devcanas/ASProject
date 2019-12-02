@@ -23,13 +23,12 @@ record_mode = len(sys.argv) == 5 and sys.argv[4] == "--recordMode"
 keep_original = True  # prevents matrix from populating with empty cells
 original_matrix = Matrix(0, True, keep_original)
 
-
 # record_mode: True write in matrix_<empty_cell_percentage>_empty_cells.txt / False read from matrix.txt
 gen_matrix = Matrix(empty_cell_percentage, record_mode)
 matrix = gen_matrix.matrix
 
 print("%.2f percent of the matrix cells are empty" %
-      (gen_matrix.empty_cells_percentage()))
+    (gen_matrix.empty_cells_percentage()))
 
 # Make the predictions using K-Nearest-Neighbors with users
 alg = KNN_users(matrix, k_neighbors)
